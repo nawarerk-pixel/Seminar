@@ -41,6 +41,7 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="create">+ สร้างงานใหม่</button>
         <button class="tab-btn" data-tab="manage">จัดการงานที่เปิดอยู่</button>
+        <button class="tab-btn" data-tab="members">จัดการกลุ่มสมาชิก</button>
         <button class="tab-btn" data-tab="history">ประวัติย้อนหลัง</button>
       </div>
 
@@ -82,6 +83,44 @@
         <div class="card">
           <h2 style="font-size:1.05rem;margin-bottom:10px">งานที่เปิดอยู่</h2>
           <div id="manageList"><p class="muted">กำลังโหลด...</p></div>
+        </div>
+      </div>
+
+      <!-- ===== MEMBERS MASTER ===== -->
+      <div class="tab-panel" id="tab-members">
+        <div class="card">
+          <h2 style="font-size:1.05rem;margin-bottom:10px">กลุ่มที่มีอยู่</h2>
+          <div id="groupsList"><p class="muted">กำลังโหลด...</p></div>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size:1.05rem;margin-bottom:14px">+ เพิ่มสมาชิกเข้ากลุ่ม</h2>
+
+          <div class="field">
+            <label>ชื่อกลุ่ม (พิมพ์ชื่อใหม่เพื่อสร้างกลุ่ม หรือเลือกจากกลุ่มเดิมเพื่อเพิ่มคนเข้าไป)</label>
+            <input type="text" id="mGroupName" list="mGroupOptions" placeholder="เช่น สภาเด็ก 2569">
+            <datalist id="mGroupOptions"></datalist>
+          </div>
+
+          <div class="field">
+            <label>วางรายชื่อจาก Excel/Google Sheets (คอลัมน์ ชื่อ [Tab] ฝ่าย — 1 คนต่อบรรทัด)</label>
+            <textarea id="mPasteArea" rows="4" placeholder="สมชาย ใจดี	ฝ่ายวิชาการ&#10;สมหญิง รักเรียน	ฝ่ายกิจกรรม"></textarea>
+            <button class="btn outline sm" id="mParsePasteBtn" style="margin-top:8px">↓ แปลงลงตารางด้านล่าง</button>
+          </div>
+
+          <div class="row-actions">
+            <button class="btn outline sm" id="mAddRowBtn">+ เพิ่มแถว</button>
+            <button class="btn outline sm" id="mClearBtn">ล้างตาราง</button>
+            <span class="muted" style="align-self:center">ทั้งหมด <b id="mCount">0</b> คน</span>
+          </div>
+          <div style="max-height:300px;overflow-y:auto">
+            <table class="roster">
+              <thead><tr><th>ชื่อ-นามสกุล</th><th>ฝ่าย/หมวด</th><th></th></tr></thead>
+              <tbody id="mBody"></tbody>
+            </table>
+          </div>
+
+          <button class="btn green block" id="mSaveBtn" style="margin-top:16px">บันทึกเข้ากลุ่ม</button>
         </div>
       </div>
 
@@ -158,13 +197,110 @@
     async function loadGroups() {
       const res = await apiCall('getGroups', {});
       const sel = document.getElementById('groupSelect');
+      const dlist = document.getElementById('mGroupOptions');
+      const groupsList = document.getElementById('groupsList');
+
       if (!res.ok || !Object.keys(res.groups).length) {
         sel.innerHTML = '<option value="">ยังไม่มีกลุ่มที่บันทึกไว้</option>';
+        dlist.innerHTML = '';
+        groupsList.innerHTML = '<p class="muted">ยังไม่มีกลุ่มที่บันทึกไว้ เพิ่มได้จากด้านล่าง</p>';
         return;
       }
       groupsData = res.groups;
-      sel.innerHTML = Object.keys(res.groups).map(g => `<option value="${g}">${g} (${res.groups[g].length} คน)</option>`).join('');
+      const names = Object.keys(res.groups);
+
+      sel.innerHTML = names.map(g => `<option value="${g}">${g} (${res.groups[g].length} คน)</option>`).join('');
+      dlist.innerHTML = names.map(g => `<option value="${g}">`).join('');
+
+      groupsList.innerHTML = names.map(g => `
+        <div class="manage-row" style="align-items:flex-start">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <b>${g}</b><span class="muted">${res.groups[g].length} คน</span>
+              <button class="btn outline sm" onclick="toggleGroupMembers(this)">ดูรายชื่อ</button>
+              <button class="btn danger sm" onclick="deleteGrp('${g}')">ลบทั้งกลุ่ม</button>
+            </div>
+            <div class="group-members" style="display:none;margin-top:10px">
+              ${res.groups[g].map(m => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:0.85rem">
+                  <span>${m.name}${m.department ? ' <span class="muted">(' + m.department + ')</span>' : ''}</span>
+                  <button class="btn danger sm" onclick="deleteMbr('${m.member_id}')">ลบ</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
     }
+
+    function toggleGroupMembers(btn) {
+      const box = btn.closest('div').nextElementSibling;
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function deleteGrp(groupName) {
+      if (!confirm(`ลบกลุ่ม "${groupName}" ทั้งกลุ่มใช่หรือไม่? (ไม่กระทบงานประชุมที่สร้างไปแล้ว)`)) return;
+      const res = await apiCall('deleteGroup', { group_name: groupName, pin: currentPin });
+      if (res.ok) { toast(`ลบแล้ว ${res.deleted_count} คน`, 'ok'); loadGroups(); }
+      else toast('ไม่สำเร็จ', 'err');
+    }
+
+    async function deleteMbr(memberId) {
+      if (!confirm('ลบคนนี้ออกจากกลุ่มใช่หรือไม่?')) return;
+      const res = await apiCall('deleteMember', { member_id: memberId, pin: currentPin });
+      if (res.ok) { toast('ลบแล้ว', 'ok'); loadGroups(); }
+      else toast('ไม่สำเร็จ', 'err');
+    }
+
+    // ===== เพิ่มสมาชิกใหม่: ตาราง + paste =====
+    let newMemberBatch = [];
+    function renderMemberBatch() {
+      document.getElementById('mCount').textContent = newMemberBatch.length;
+      document.getElementById('mBody').innerHTML = newMemberBatch.map((m, i) => `
+        <tr>
+          <td><input value="${m.name}" onchange="newMemberBatch[${i}].name=this.value"></td>
+          <td><input value="${m.department || ''}" onchange="newMemberBatch[${i}].department=this.value"></td>
+          <td><button class="btn danger sm" onclick="removeMemberRow(${i})">ลบ</button></td>
+        </tr>
+      `).join('');
+    }
+    function removeMemberRow(i) { newMemberBatch.splice(i, 1); renderMemberBatch(); }
+    document.getElementById('mAddRowBtn').onclick = () => { newMemberBatch.push({ name: '', department: '' }); renderMemberBatch(); };
+    document.getElementById('mClearBtn').onclick = () => { newMemberBatch = []; renderMemberBatch(); };
+
+    document.getElementById('mParsePasteBtn').onclick = () => {
+      const raw = document.getElementById('mPasteArea').value;
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+      if (!lines.length) { toast('ไม่มีข้อมูลให้แปลง', 'err'); return; }
+      lines.forEach(line => {
+        const cols = line.split('\t');
+        const name = (cols[0] || '').trim();
+        const department = (cols[1] || '').trim();
+        if (name) newMemberBatch.push({ name, department });
+      });
+      document.getElementById('mPasteArea').value = '';
+      renderMemberBatch();
+      toast(`เพิ่ม ${lines.length} แถวลงตารางแล้ว ตรวจสอบก่อนบันทึก`, 'ok');
+    };
+
+    document.getElementById('mSaveBtn').onclick = async () => {
+      const groupName = document.getElementById('mGroupName').value.trim();
+      const clean = newMemberBatch.filter(m => m.name.trim());
+      if (!groupName) { toast('กรุณากรอกชื่อกลุ่ม', 'err'); return; }
+      if (!clean.length) { toast('ยังไม่มีรายชื่อในตาราง', 'err'); return; }
+
+      const btn = document.getElementById('mSaveBtn');
+      btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+      const res = await apiCall('addMembers', { group_name: groupName, members: clean, pin: currentPin });
+      btn.disabled = false; btn.textContent = 'บันทึกเข้ากลุ่ม';
+
+      if (res.ok) {
+        toast(`บันทึก ${res.added_count} คนเข้ากลุ่ม "${groupName}" แล้ว`, 'ok');
+        newMemberBatch = []; renderMemberBatch();
+        document.getElementById('mGroupName').value = '';
+        loadGroups();
+      } else toast('บันทึกไม่สำเร็จ: ' + res.error, 'err');
+    };
     document.getElementById('loadGroupBtn').onclick = () => {
       const g = document.getElementById('groupSelect').value;
       if (!g || !groupsData[g]) { toast('ไม่พบกลุ่มนี้', 'err'); return; }
