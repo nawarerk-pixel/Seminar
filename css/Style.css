@@ -1,0 +1,179 @@
+/* ============ Design tokens ============
+   ธีม: ห้องประชุมสภา — น้ำเงินหมึกเข้ม + ทองเหลือง (brass) เป็นสีเน้น
+   Type: Kanit (หัวเรื่อง/ตัวเลข) + Sarabun (เนื้อหา) */
+
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink: #17233D;
+  --ink-soft: #3C4A66;
+  --paper: #EEF1EC;
+  --paper-raised: #FFFFFF;
+  --line: #D4D8CC;
+  --brass: #B98B32;
+  --brass-soft: #E9D3A3;
+  --green: #2F8F5B;
+  --green-soft: #DCEFE3;
+  --red: #C2483C;
+  --red-soft: #F6DEDA;
+
+  --font-display: 'Kanit', sans-serif;
+  --font-body: 'Sarabun', sans-serif;
+
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(23, 35, 61, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+h1, h2, h3, .num {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+a { color: inherit; }
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.topbar {
+  background: var(--ink);
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.topbar .brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.topbar .brand small {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--brass-soft);
+  letter-spacing: 0.05em;
+}
+
+.card {
+  background: var(--paper-raised);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  background: var(--ink);
+  color: #fff;
+  transition: transform 0.08s ease, opacity 0.15s ease;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn.brass { background: var(--brass); color: #241a06; }
+.btn.green { background: var(--green); }
+.btn.outline { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.danger { background: var(--red); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.block { width: 100%; }
+.btn.sm { padding: 8px 14px; font-size: 0.85rem; }
+
+input[type=text], input[type=number], input[type=password], input[type=date], select, textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+label { font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; display: block; margin-bottom: 6px; }
+.field { margin-bottom: 14px; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pill.green { background: var(--green-soft); color: var(--green); }
+.pill.red { background: var(--red-soft); color: var(--red); }
+.pill.brass { background: var(--brass-soft); color: #6b4c0f; }
+
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  background: #fff;
+}
+.event-item:hover { border-color: var(--brass); }
+.event-item .meta { font-size: 0.82rem; color: var(--ink-soft); margin-top: 3px; }
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.toast.show { opacity: 1; }
+.toast.err { background: var(--red); }
+.toast.ok { background: var(--green); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+}
+
+.muted { color: var(--ink-soft); font-size: 0.88rem; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
