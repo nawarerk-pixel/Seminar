@@ -65,7 +65,7 @@
 </head>
 <body>
   <div class="dtop">
-    <h1 id="eventName">กำลังโหลด...</h1>
+    <h1 id="eventName">กำลังโหลด... <span id="closedBadge" class="pill red" style="display:none;vertical-align:middle;margin-left:8px">ปิดงานแล้ว</span></h1>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 
@@ -114,7 +114,8 @@
       const res = await apiCall('getStatus', { event_id: eventId });
       if (!res.ok) return;
 
-      document.getElementById('eventName').textContent = res.event.name;
+      document.getElementById('eventName').firstChild.textContent = res.event.name + ' ';
+      document.getElementById('closedBadge').style.display = res.event.status !== 'active' ? 'inline-flex' : 'none';
       const pct = Math.min(100, res.percentage);
       const ring = document.getElementById('ring');
       ring.style.setProperty('--pct', pct + '%');
