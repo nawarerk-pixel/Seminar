@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จอแสดงผลองค์ประชุม</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background: var(--ink); color: #fff; }
+  .dtop {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 22px 28px 10px; flex-wrap: wrap; gap: 10px;
+  }
+  .dtop h1 { font-size: clamp(1.3rem, 2.6vw, 2rem); }
+  .clock { font-family: var(--font-display); font-size: clamp(1.4rem,2.6vw,2.1rem); color: var(--brass-soft); font-variant-numeric: tabular-nums; }
+  .dgrid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 18px;
+    padding: 8px 28px 20px;
+  }
+  @media (max-width: 820px) { .dgrid { grid-template-columns: 1fr; } }
+
+  .ring-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(255,255,255,0.04); border-radius: 20px; padding: 22px; }
+  .ring {
+    width: 230px; height: 230px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(var(--ring-color, var(--brass)) var(--pct, 0%), rgba(255,255,255,0.08) 0);
+    transition: background 0.6s ease;
+    position: relative;
+  }
+  .ring::before {
+    content: ''; position: absolute; width: 190px; height: 190px; border-radius: 50%; background: var(--ink);
+  }
+  .ring .center { position: relative; text-align: center; z-index: 1; }
+  .ring .center .pctnum { font-family: var(--font-display); font-size: 2.6rem; font-weight: 700; }
+  .ring .center .pctlabel { font-size: 0.8rem; color: rgba(255,255,255,0.65); }
+  .quorum-tag { margin-top: 14px; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; padding: 6px 18px; border-radius: 999px; }
+  .quorum-tag.met { background: var(--green-soft); color: var(--green); }
+  .quorum-tag.not { background: var(--red-soft); color: var(--red); }
+  .quorum-target { margin-top: 8px; font-size: 0.82rem; color: rgba(255,255,255,0.55); }
+
+  .rightcol { display:flex; flex-direction:column; gap: 18px; }
+  .bignums { display:flex; gap: 14px; flex-wrap: wrap; }
+  .bignum { flex:1; min-width: 140px; background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px 18px; }
+  .bignum .n { font-family: var(--font-display); font-size: 2.1rem; font-weight: 700; }
+  .bignum .l { font-size: 0.82rem; color: rgba(255,255,255,0.6); }
+  .bignum.come .n { color: var(--green); }
+  .bignum.absent .n { color: var(--red); }
+
+  .breakdown { background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px 18px; flex:1; }
+  .breakdown h3 { font-size: 0.9rem; color: rgba(255,255,255,0.75); margin-bottom: 10px; font-weight: 600; }
+  .bd-row { display:flex; align-items:center; gap:10px; margin-bottom: 8px; font-size: 0.85rem; }
+  .bd-row .lbl { width: 130px; flex-shrink:0; color: rgba(255,255,255,0.75); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bd-bar-bg { flex:1; height: 10px; border-radius: 6px; background: rgba(255,255,255,0.08); overflow:hidden; }
+  .bd-bar { height: 100%; background: var(--brass); border-radius: 6px; }
+  .bd-frac { width: 46px; text-align:right; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.6); }
+
+  .listwrap { grid-column: 1 / -1; background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px 20px; margin: 0 28px 26px; max-height: 34vh; overflow-y: auto; }
+  .listwrap h3 { font-size: 0.9rem; color: rgba(255,255,255,0.75); margin-bottom: 10px; }
+  .attendee-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 6px 16px; }
+  .attendee { display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
+  .attendee .late { color: var(--brass-soft); font-size: 0.75rem; margin-left:6px; }
+</style>
+</head>
+<body>
+  <div class="dtop">
+    <h1 id="eventName">กำลังโหลด...</h1>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+
+  <div class="dgrid">
+    <div class="ring-wrap">
+      <div class="ring" id="ring" style="--pct:0%">
+        <div class="center">
+          <div class="pctnum" id="pctnum">0%</div>
+          <div class="pctlabel">เข้าประชุมแล้ว</div>
+        </div>
+      </div>
+      <div class="quorum-tag not" id="quorumTag">ยังไม่ครบองค์ประชุม</div>
+      <div class="quorum-target" id="quorumTarget">เกณฑ์ 50%</div>
+    </div>
+
+    <div class="rightcol">
+      <div class="bignums">
+        <div class="bignum come"><div class="n" id="comeNum">0</div><div class="l">มาแล้ว (คน)</div></div>
+        <div class="bignum absent"><div class="n" id="absentNum">0</div><div class="l">ยังไม่มา (คน)</div></div>
+        <div class="bignum"><div class="n" id="pendingNum">0</div><div class="l">รอเลขายืนยัน</div></div>
+      </div>
+      <div class="breakdown">
+        <h3>แยกตามฝ่าย</h3>
+        <div id="bdList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="listwrap">
+    <h3>รายชื่อผู้เข้าประชุม (ยืนยันสิทธิ์แล้ว)</h3>
+    <div class="attendee-grid" id="attendeeGrid"><span class="muted">ยังไม่มีผู้เข้าประชุม</span></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const eventId = qs('event');
+    if (!eventId) document.getElementById('eventName').textContent = 'ไม่พบงานประชุม';
+
+    function tickClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('th-TH');
+    }
+    setInterval(tickClock, 1000); tickClock();
+
+    async function refresh() {
+      if (!eventId) return;
+      const res = await apiCall('getStatus', { event_id: eventId });
+      if (!res.ok) return;
+
+      document.getElementById('eventName').textContent = res.event.name;
+      const pct = Math.min(100, res.percentage);
+      const ring = document.getElementById('ring');
+      ring.style.setProperty('--pct', pct + '%');
+      document.getElementById('pctnum').textContent = Math.round(res.percentage) + '%';
+
+      const met = res.quorum_met;
+      ring.style.setProperty('--ring-color', met ? 'var(--green)' : 'var(--brass)');
+      const tag = document.getElementById('quorumTag');
+      tag.textContent = met ? '✓ ครบองค์ประชุมแล้ว' : 'ยังไม่ครบองค์ประชุม';
+      tag.className = 'quorum-tag ' + (met ? 'met' : 'not');
+      document.getElementById('quorumTarget').textContent = `เกณฑ์ ${res.event.quorum_pct}% ของสมาชิกทั้งหมด ${res.total_roster} คน`;
+
+      document.getElementById('comeNum').textContent = res.confirmed_count;
+      document.getElementById('absentNum').textContent = res.absent_count;
+      document.getElementById('pendingNum').textContent = res.pending_count;
+
+      const bd = document.getElementById('bdList');
+      const depts = Object.keys(res.breakdown);
+      bd.innerHTML = depts.length ? depts.map(d => {
+        const v = res.breakdown[d];
+        const p = v.total ? (v.confirmed / v.total) * 100 : 0;
+        return `<div class="bd-row">
+          <div class="lbl">${d}</div>
+          <div class="bd-bar-bg"><div class="bd-bar" style="width:${p}%"></div></div>
+          <div class="bd-frac">${v.confirmed}/${v.total}</div>
+        </div>`;
+      }).join('') : '<span class="muted">ไม่มีข้อมูลฝ่าย</span>';
+
+      const grid = document.getElementById('attendeeGrid');
+      grid.innerHTML = res.attendees.length ? res.attendees.map(a =>
+        `<div class="attendee"><span>${a.name}</span><span>${fmtTime(a.timestamp)}${a.is_late ? '<span class="late">🔸มาสาย</span>' : ''}</span></div>`
+      ).join('') : '<span class="muted">ยังไม่มีผู้เข้าประชุม</span>';
+    }
+
+    refresh();
+    setInterval(refresh, 7000);
+  </script>
+</body>
+</html>
