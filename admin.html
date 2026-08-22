@@ -219,6 +219,13 @@
       else toast('ไม่สำเร็จ', 'err');
     }
 
+    async function reopenEv(id) {
+      if (!confirm('เปิดงานประชุมนี้อีกครั้งใช่หรือไม่? จะกลับมาเช็คชื่อ/ยืนยันสิทธิ์ต่อได้')) return;
+      const res = await apiCall('reopenEvent', { event_id: id, pin: currentPin });
+      if (res.ok) { toast('เปิดงานอีกครั้งแล้ว', 'ok'); loadManage(); loadHistory(); }
+      else toast('ไม่สำเร็จ', 'err');
+    }
+
     // ===== History =====
     async function loadHistory() {
       const res = await apiCall('getHistory', { pin: currentPin });
@@ -233,6 +240,7 @@
           <div style="display:flex;align-items:center;gap:8px">
             <span class="pill ${h.quorum_met ? 'green' : 'red'}">${h.quorum_met ? '✓ ครบองค์ประชุม' : '✗ ไม่ครบองค์ประชุม'}</span>
             <a class="btn outline sm" href="display.html?event=${h.event_id}" target="_blank">ดูจอแสดงผล</a>
+            <button class="btn brass sm" onclick="reopenEv('${h.event_id}')">↺ เปิดอีกครั้ง</button>
           </div>
         </div>
       `).join('');
