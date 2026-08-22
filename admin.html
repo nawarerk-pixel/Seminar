@@ -230,7 +230,10 @@
             <div style="font-weight:600">${h.name}</div>
             <div class="muted">${fmtDate(h.date)} · ${h.confirmed_count}/${h.total_roster} คน (${h.percentage}%)</div>
           </div>
-          <span class="pill ${h.quorum_met ? 'green' : 'red'}">${h.quorum_met ? '✓ ครบองค์ประชุม' : '✗ ไม่ครบองค์ประชุม'}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="pill ${h.quorum_met ? 'green' : 'red'}">${h.quorum_met ? '✓ ครบองค์ประชุม' : '✗ ไม่ครบองค์ประชุม'}</span>
+            <a class="btn outline sm" href="display.html?event=${h.event_id}" target="_blank">ดูจอแสดงผล</a>
+          </div>
         </div>
       `).join('');
     }
