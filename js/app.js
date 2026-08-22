@@ -1,5 +1,5 @@
 // ==== ตั้งค่า URL ของ Apps Script Web App ที่ deploy แล้ว ====
-const API_BASE_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbz7ECJPGrHYpqLFjDy8z0D7Z9l-jsyPjbNbcQzPG3Bl509_WGMwKrzh9p2wuM9krgVJ/exec';
 
 async function apiCall(action, payload) {
   const res = await fetch(API_BASE_URL, {
