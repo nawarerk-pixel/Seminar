@@ -117,8 +117,11 @@
       const res = await apiCall('submitCheckin', { event_id: eventId, member_id: selectedMemberId });
       btn.disabled = false; btn.textContent = '✓ ยืนยันเข้าประชุม';
       if (!res.ok) {
-        const msg = res.error === 'already_checked_in' ? 'ชื่อนี้เช็คชื่อไปแล้ว' : 'เกิดข้อผิดพลาด กรุณาลองใหม่';
-        toast(msg, 'err');
+        const msgMap = {
+          already_checked_in: 'ชื่อนี้เช็คชื่อไปแล้ว',
+          busy_try_again: 'ระบบกำลังยุ่ง กรุณาลองกดยืนยันอีกครั้ง'
+        };
+        toast(msgMap[res.error] || 'เกิดข้อผิดพลาด กรุณาลองใหม่', 'err');
         return;
       }
       document.getElementById('doneMsg').textContent = `${res.name} — รอเลขาสภายืนยันสิทธิ์`;
