@@ -183,6 +183,33 @@ label { font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; display: b
   color: var(--ink-soft);
 }
 
+.combobox { position: relative; }
+.combobox-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+  display: none;
+}
+.combobox-results.show { display: block; }
+.combobox-item {
+  padding: 12px 14px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--line);
+}
+.combobox-item:last-child { border-bottom: none; }
+.combobox-item:hover, .combobox-item.active { background: var(--paper); }
+.combobox-item .dept { color: var(--ink-soft); font-size: 0.8rem; }
+.combobox-empty { padding: 14px; text-align: center; color: var(--ink-soft); font-size: 0.88rem; }
+
 .muted { color: var(--ink-soft); font-size: 0.88rem; }
 
 ::-webkit-scrollbar { width: 8px; }
