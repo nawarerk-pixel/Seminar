@@ -14,9 +14,10 @@
 
   <div class="wrap" style="max-width:560px">
     <div class="card">
-      <div class="field">
+      <div class="field combobox">
         <label>ชื่อ-นามสกุลของท่าน</label>
-        <select id="memberSelect"><option>กำลังโหลดรายชื่อ...</option></select>
+        <input type="text" id="memberSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." autocomplete="off" disabled>
+        <div class="combobox-results" id="memberResults"></div>
       </div>
       <button class="btn brass block" id="submitBtn">✓ ยืนยันเข้าประชุม</button>
       <p class="muted" style="margin-top:10px">หลังกดยืนยันแล้ว รายชื่อของท่านจะรอเลขาสภาตรวจสอบและยืนยันสิทธิ์อีกครั้ง</p>
@@ -35,6 +36,9 @@
     const eventId = qs('event');
     if (!eventId) document.body.innerHTML = '<div class="wrap"><div class="card">ไม่พบงานประชุม กรุณากลับไปหน้าเลือกงาน</div></div>';
 
+    let fullRoster = [];
+    let selectedMemberId = '';
+
     async function init() {
       const detail = await apiCall('getEventDetail', { event_id: eventId });
       if (detail.ok) {
@@ -46,24 +50,61 @@
         }
       }
       const res = await apiCall('getRoster', { event_id: eventId });
-      const sel = document.getElementById('memberSelect');
+      const input = document.getElementById('memberSearch');
       if (!res.ok || !res.roster.length) {
-        sel.innerHTML = '<option>ไม่มีรายชื่อเหลือให้เช็คชื่อ</option>';
+        input.placeholder = 'ไม่มีรายชื่อเหลือให้เช็คชื่อ';
         document.getElementById('submitBtn').disabled = true;
         return;
       }
-      sel.innerHTML = '<option value="">— เลือกชื่อ —</option>' +
-        res.roster.map(m => `<option value="${m.member_id}">${m.name}${m.department ? ' (' + m.department + ')' : ''}</option>`).join('');
+      fullRoster = res.roster;
+      input.disabled = false;
     }
     init();
 
+    function renderResults(list) {
+      const box = document.getElementById('memberResults');
+      if (!list.length) {
+        box.innerHTML = '<div class="combobox-empty">ไม่พบชื่อที่ค้นหา</div>';
+      } else {
+        box.innerHTML = list.slice(0, 8).map(m => `
+          <div class="combobox-item" data-id="${m.member_id}" data-name="${m.name}">
+            ${m.name}${m.department ? ` <span class="dept">(${m.department})</span>` : ''}
+          </div>
+        `).join('');
+      }
+      box.classList.add('show');
+    }
+
+    const searchInput = document.getElementById('memberSearch');
+    searchInput.addEventListener('focus', () => {
+      const q = searchInput.value.trim();
+      renderResults(q ? filterRoster(q) : fullRoster);
+    });
+    searchInput.addEventListener('input', () => {
+      selectedMemberId = '';
+      const q = searchInput.value.trim();
+      renderResults(q ? filterRoster(q) : fullRoster);
+    });
+    function filterRoster(q) {
+      const needle = q.toLowerCase();
+      return fullRoster.filter(m => m.name.toLowerCase().includes(needle));
+    }
+    document.getElementById('memberResults').addEventListener('click', (e) => {
+      const item = e.target.closest('.combobox-item');
+      if (!item || !item.dataset.id) return;
+      selectedMemberId = item.dataset.id;
+      searchInput.value = item.dataset.name;
+      document.getElementById('memberResults').classList.remove('show');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.combobox')) document.getElementById('memberResults').classList.remove('show');
+    });
+
     document.getElementById('submitBtn').onclick = async () => {
-      const sel = document.getElementById('memberSelect');
-      const memberId = sel.value;
-      if (!memberId) { toast('กรุณาเลือกชื่อก่อน', 'err'); return; }
+      if (!selectedMemberId) { toast('กรุณาเลือกชื่อจากรายการที่ค้นหา', 'err'); return; }
       const btn = document.getElementById('submitBtn');
       btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-      const res = await apiCall('submitCheckin', { event_id: eventId, member_id: memberId });
+      const res = await apiCall('submitCheckin', { event_id: eventId, member_id: selectedMemberId });
       btn.disabled = false; btn.textContent = '✓ ยืนยันเข้าประชุม';
       if (!res.ok) {
         const msg = res.error === 'already_checked_in' ? 'ชื่อนี้เช็คชื่อไปแล้ว' : 'เกิดข้อผิดพลาด กรุณาลองใหม่';
