@@ -14,9 +14,12 @@
 
   <div class="wrap" style="max-width:560px">
     <div class="card">
+      <p class="muted" id="loadingMsg" style="display:flex;align-items:center;gap:8px">
+        <span class="spinner"></span> กำลังโหลดรายชื่อ...
+      </p>
       <div class="field combobox">
         <label>ชื่อ-นามสกุลของท่าน</label>
-        <input type="text" id="memberSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." autocomplete="off" disabled>
+        <input type="text" id="memberSearch" placeholder="กำลังโหลดรายชื่อ..." autocomplete="off" disabled>
         <div class="combobox-results" id="memberResults"></div>
       </div>
       <button class="btn brass block" id="submitBtn">✓ ยืนยันเข้าประชุม</button>
@@ -40,7 +43,13 @@
     let selectedMemberId = '';
 
     async function init() {
-      const detail = await apiCall('getEventDetail', { event_id: eventId });
+      const [detail, res] = await Promise.all([
+        apiCall('getEventDetail', { event_id: eventId }),
+        apiCall('getRoster', { event_id: eventId })
+      ]);
+
+      document.getElementById('loadingMsg').style.display = 'none';
+
       if (detail.ok) {
         document.getElementById('eventTitle').innerHTML =
           `<span class="brand-school">โรงเรียนท่าตูมประชาเสริมวิทย์</span>${detail.event.name}<small>เลือกชื่อของท่านแล้วกดยืนยัน</small>`;
@@ -49,7 +58,7 @@
           return;
         }
       }
-      const res = await apiCall('getRoster', { event_id: eventId });
+
       const input = document.getElementById('memberSearch');
       if (!res.ok || !res.roster.length) {
         input.placeholder = 'ไม่มีรายชื่อเหลือให้เช็คชื่อ';
@@ -58,6 +67,7 @@
       }
       fullRoster = res.roster;
       input.disabled = false;
+      input.placeholder = 'พิมพ์ชื่อเพื่อค้นหา...';
     }
     init();
 
